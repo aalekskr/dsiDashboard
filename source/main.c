@@ -107,9 +107,10 @@ int main(void){
 
     iprintf("Connecting to Wifi..\n");
     if (!wifi_connected()){
-        iprintf("WiFi FAILED!\nCheck WFC settings, or restart and try again.\n")
+        iprintf("WiFi FAILED!\nCheck WFC settings, or restart and try again.\n");
         while (1) swiWaitForVBlank();
     }
+    iprintf("WiFi OK!\n\nFetching Home Assistant data...\n");
 
     //fetch initial Information
     //implement fetch_entity and fetch_weather function
