@@ -50,7 +50,7 @@ static int http_get(const char *host, int port, const char *path, const char *to
     struct hostent *he = gethostbyname(host);
     if (!he) return -1;
     int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0) return -1
+    if (sock < 0) return -1;
 
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
@@ -104,7 +104,30 @@ static void json_get(const char *json, const char *key, char *out, int outsz){
 }
 
 static void fetch_entity(int enID){
-    //implement
+    static char resp[MAX_RESP];
+    char path[128];
+    snprintf(path, sizeof(path), "/api/states/%s", ENTITIES_IDS[enID]);
+    strncpy(entities[enID].entity_id, ENTITIES_IDS[enID], 63);
+    if (http_get(HA_HOST_IP, HA_HOST_PORT, path, HA_LLA_TOKEN, resp, MAX_RESP) < 0){
+        strcpy(entities[enID].state, "ERR");
+        strcpy(entities[enID].entity_name, ENTITIES_IDS[enID]);
+        return;
+    }
+    char *body = strstr(resp, "\r\n\r\n");
+    if (!body){
+        strcpy(entities[enID].state, "ERR");
+        return;
+    }
+    body +=4;
+    json_get(body, "state", entities[enID].state, 32);
+    char *attrs = strstr(body, "\"attributes\"");
+    if(attrs){
+        json_get(attrs, "entity_name", entities[enID].entity_name, 64);
+    }
+    if (entities[enID].entity_name[0] == '\0'){
+        strncpy(entities[enID].entity_name, ENTITIES_IDS[enID], 63);
+    }
+
 }
 
 static void fetch_weather(void){
