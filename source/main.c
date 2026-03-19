@@ -97,7 +97,8 @@ static void setup_consoles(void){
 }
 
 static bool wifi_connected(void){
-    //implement
+    if (!Wifi_InitDefault(WFC_CONNECT)) return false;
+    return true;
 }
 
 int main(void){
@@ -105,7 +106,10 @@ int main(void){
     consoleSelect(&topScreen);
 
     iprintf("Connecting to Wifi..\n");
-    //implement wifi function
+    if (!wifi_connected()){
+        iprintf("WiFi FAILED!\nCheck WFC settings, or restart and try again.\n")
+        while (1) swiWaitForVBlank();
+    }
 
     //fetch initial Information
     //implement fetch_entity and fetch_weather function
