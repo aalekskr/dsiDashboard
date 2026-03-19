@@ -80,12 +80,49 @@ static int http_get(const char *host, int port, const char *path, const char *to
     return total;
 }
 
+static void json_get(const char *json, const char *key, char *out, int outsz){
+    out[0] = '\0';
+    char search[64];
+    snprintf(search, sizeof(search), "\"%s\"", key);
+    const char *p = strstr(json, search)
+    if (!p) return;
+    p += strlen(search);
+    while (*p == ' ' || *p == ':') p++;
+    char end_char = ',';
+    if (p* == '"'){
+        p++;
+        end_char = '"';
+    }
+    else if (*p == '{' || *p == '[') return;
+
+
+    int i = 0;
+    while (*p && *p != end_char && *p != '}' && *p != '\n' && i < outsz -1){
+        out[i++] = *p++;
+    }
+    out[i] = '\0'
+}
+
 static void fetch_entity(int enID){
     //implement
 }
 
 static void fetch_weather(void){
-    //implement
+    static char resp[MAX_RESP];
+    char path[128];
+    snprintf(path, sizeof(path), "/api/states/%s", WEATHER_ENTITY);
+    if (http_get(HA_HOST_IP, HA_HOST_PORT, path, HA_LLA_TOKEN, resp, MAX_RESP) < 0){
+        strcpy(weather_state, "offline");
+        return;
+    }
+    char *body = strstr(resp, "\r\n\r\n");
+    if (!body) return;
+    body += 4;
+    json_get(body, "state", weather_state, 32);
+    char *attrs = strstr(body, "\"attributes\"");
+    if (attrs){
+        json_get(attrs, "temperature", weather_temperature, 16);
+    }
 }
 
 static void drawScreen(void){
