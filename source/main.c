@@ -153,7 +153,12 @@ static void drawScreen(void){
 }
 
 static void setup_consoles(void){
-    //implement
+    videoSetMode(MODE_0_2D);
+    videoSetModeSub(MODE_0_2D);
+    vramSetBankA(VRAM_A_MAIN_BG);
+    vramSetBankC(VRAM_C_SUB_BG);
+    consoleInit(&topScreen, 3, BgType_Text4bpp, BgSize_T_256x256, 31, 0, true, true);
+    consoleInit(&bottomScreen, 3, BgType_Text4bpp, BgSize_T_256x256, 31, 0, false, true);
 }
 
 static bool wifi_connected(void){
@@ -162,22 +167,54 @@ static bool wifi_connected(void){
 }
 
 int main(void){
-    setup_consoles(); //Initialize print consoles. To be implemented.
+    setup_consoles();
     consoleSelect(&topScreen);
 
     iprintf("Connecting to Wifi..\n");
     if (!wifi_connected()){
-        iprintf("WiFi FAILED!\nCheck WFC settings, or restart and try again.\n");
+        iprintf("WiFi FAILED!\nCheck WFC settings.\nOr restart and try again.\n");
         while (1) swiWaitForVBlank();
     }
     iprintf("WiFi OK!\n\nFetching Home Assistant data...\n");
 
-    //fetch initial Information
-    //implement fetch_entity and fetch_weather function
-
-    //main loop
-    while(1){
-        //implement draw function for both Screens
-        //implement manual and automatic refresh
+    fetch_weather();
+    for (int i = 0; i < ENTITIES_NUM; i++){
+        fetch_entity(i);
     }
+
+    u32 refresh_timer = 0;
+    const u32 AUTO_REFRESH_FRAMES = 60 * 30; 
+
+        //main loop
+    while(1){
+        swiWaitForVBlank();
+        scanKeys();
+        u32 keys = keysDown();
+
+        if (keys & KEY_START || keys & KEY_A){
+            consoleSelect(&topScreen);
+            consoleCleat();
+            iprintf("Refreshing data...\n");
+            fetch_weather();
+            for (int i = 0; i < ENTITIES_NUM; i++){
+                fetch_entity(i);
+            }
+            refresh_timer = 0;
+        }
+
+        refresh_timer++;
+        if (refresh_timer >= AUTO_REFRESH_FRAMES){
+            fetch_weather;
+            for (int i = 0; i < ENTITIES_NUM; i++){
+                fetch_entity(i);
+            }
+            refresh_timer = 0;
+        }
+
+        consoleSelect(&topScreen);
+        drawScreen();
+        consoleSelect(&topScreen);
+        
+    }
+    return 0;
 }
