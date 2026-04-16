@@ -148,8 +148,53 @@ static void fetch_weather(void){
     }
 }
 
-static void drawScreen(void){
-    //implement function to print out the fetched data to the screens
+static void drawTopScreen(void){
+    consoleClear();
+
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+
+    iprintf("\x1b[0;0H");
+    iprintf("*********************************\n");
+    iprintf(" DSi Home Assistant Dashboard\n")
+    iprintf("*********************************\n");
+
+    iprintf("\n   Time : %02d:%02d:%02d\n", t->tm_hour, t->tm_min, t->tm_sec);
+    iprintf("   Date : %02d.%02d.%04d", t->tm_mday, t->tm_mon, t->tm_year);
+
+    iprintf("\n   Weather : %s\n", weather_state);
+    iprintf("   Temp   : %s °C\n", weather_temperature);
+
+    iprintf("\n");
+    iprintf("*********************************\n");
+    iprintf("    [START] Refresh all data\n")
+    iprintf("*********************************\n");
+}
+
+static void drawBottomScreen(void){
+    consoleSelect(&bottomScreen);
+    consoleClear();
+
+    iprintf("\x1b[0;0H")
+    iprintf("*********************************\n");
+    iprintf(" Lights & Sensors\n");
+    iprintf("*********************************\n");
+
+    for (int i = 0; i < ENTITIES_NUM; i++){
+        const char *icon = "[ ]";
+        if (strcmp(entities[i].state, "on") == 0) icon = "[x]";
+        else if (strcmp(entities[i].state, "off") == 0) icon = "[ ]";
+        else icon = "[i]"; //Unknown switch/sensor
+
+        char name[22];
+        strcpy(name, entities[i].friendly_name, 21);
+        name[21] = '\0';
+
+        iprintf(" %s %-21s\n", icon, name);
+        iprintf("     State: %s\n\n", entities[i].state);
+    }
+    iprintf("*********************************\n");
+    iprintf("         [A] Refresh\n");
 }
 
 static void setup_consoles(void){
@@ -193,7 +238,7 @@ int main(void){
 
         if (keys & KEY_START || keys & KEY_A){
             consoleSelect(&topScreen);
-            consoleCleat();
+            consoleClear();
             iprintf("Refreshing data...\n");
             fetch_weather();
             for (int i = 0; i < ENTITIES_NUM; i++){
